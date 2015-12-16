@@ -16,6 +16,12 @@ https://github.com/InabaByakko/SSPlayerForRPGMV
 このソフトウェアは、MITライセンスのもとで公開されています。詳しくは LICENSE.md をお読み下さい。  
 This software is released under the MIT License, see LICENSE.md.
 
+# デモ - Demo
+こちらのURLで、このプラグインを使用したデモプロジェクトを公開しています。  
+I'll show a demo project of this plug-in by the following URL.
+
+http://www.whiterabbit-hutch.net/CABA2SS_Sample/
+
 # 使い方 - Usage
 
 ### プロジェクトへの組込み - How to install into your project
