@@ -58,7 +58,7 @@ On a tab "System" of "Database" dialog box, make sure that a check box "Use Side
 1. お楽しみください。  
 Enjoy!
 
-なお、本サンプルモーションは、SpriteStudio公式のキャラクターアニメーションテンプレートから、必要なモーションを足して使用させていただいております。  
+なお、本サンプルモーションは、一部SpriteStudio公式のキャラクターアニメーションテンプレートから引用させていただいており、別途足りないモーションを補完して添付しています。  
 http://www.webtech.co.jp/help/ja/spritestudio/download/tool_sample_download/#sample
 
 ### 自作アニメーションを組み込む方法 - Include animations that you made
