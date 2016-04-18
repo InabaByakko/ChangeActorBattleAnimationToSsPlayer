@@ -77,9 +77,17 @@
  * @param Suffix(dead)
  * @desc An suffix of side view battler's image file name which means dead motion. Default value is "dead"
  * @default dead
+ *
+ * @param HideWeaponGraphics
+ * @desc Select whether you hide battler's weapon animation graphics(ON or OFF). Default value is "OFF"
+ * @default OFF
  * 
  * @param Loop(dead)
- * @desc Select whether you play dead motion repeatedly. Default value is "ON"
+ * @desc Select whether you play dead motion repeatedly(ON or OFF). Default value is "ON"
+ * @default ON
+ *
+ * @param Loop(victory)
+ * @desc Select whether you play victory motion repeatedly(ON or OFF). Default value is "ON"
  * @default ON
  *
  * @help
@@ -168,8 +176,16 @@
  * @desc SV戦闘キャラ画像ファイル名の後ろに付く、戦闘不能時のモーション名。デフォルトは"dead"
  * @default dead
  * 
+ * @param HideWeaponGraphics
+ * @desc 攻撃中の武器アニメーションを非表示にするか（ON/OFF) 。デフォルトはOFF
+ * @default OFF
+ *
  * @param Loop(dead)
  * @desc 戦闘不能モーションを繰り返し再生するか（ON/OFF) 。デフォルトはON
+ * @default ON
+ * 
+ * @param Loop(victory)
+ * @desc 勝利モーションを繰り返し再生するか（ON/OFF) 。デフォルトはON
  * @default ON
  * 
  * @help
@@ -183,7 +199,7 @@
  *   （なし）
  */
 
-(function() {
+(function () {
 
     // 依存プラグイン導入チェック
     if (typeof SsSprite !== "function") {
@@ -195,67 +211,69 @@
     var parameters = PluginManager
             .parameters('ChangeActorBattleAnimationToSsPlayer');
     var motion_suffixes = {
-        walk : parameters["Suffix(walk)"],
-        wait : parameters["Suffix(wait)"],
-        chant : parameters["Suffix(chant)"],
-        guard : parameters["Suffix(guard)"],
-        damage : parameters["Suffix(damage)"],
-        evade : parameters["Suffix(evade)"],
-        thrust : parameters["Suffix(thrust)"],
-        swing : parameters["Suffix(swing)"],
-        missile : parameters["Suffix(missile)"],
-        skill : parameters["Suffix(skill)"],
-        spell : parameters["Suffix(spell)"],
-        item : parameters["Suffix(item)"],
-        escape : parameters["Suffix(escape)"],
-        victory : parameters["Suffix(victory)"],
-        dying : parameters["Suffix(dying)"],
-        abnormal : parameters["Suffix(abnormal)"],
-        sleep : parameters["Suffix(sleep)"],
-        dead : parameters["Suffix(dead)"]
-    }
-    
+        walk: parameters["Suffix(walk)"],
+        wait: parameters["Suffix(wait)"],
+        chant: parameters["Suffix(chant)"],
+        guard: parameters["Suffix(guard)"],
+        damage: parameters["Suffix(damage)"],
+        evade: parameters["Suffix(evade)"],
+        thrust: parameters["Suffix(thrust)"],
+        swing: parameters["Suffix(swing)"],
+        missile: parameters["Suffix(missile)"],
+        skill: parameters["Suffix(skill)"],
+        spell: parameters["Suffix(spell)"],
+        item: parameters["Suffix(item)"],
+        escape: parameters["Suffix(escape)"],
+        victory: parameters["Suffix(victory)"],
+        dying: parameters["Suffix(dying)"],
+        abnormal: parameters["Suffix(abnormal)"],
+        sleep: parameters["Suffix(sleep)"],
+        dead: parameters["Suffix(dead)"]
+    };
+
     if (parameters["Loop(dead)"].toUpperCase() == "OFF")
         Sprite_Actor.MOTIONS["dead"]["loop"] = false;
-    
+    if (parameters["Loop(victory)"].toUpperCase() == "OFF")
+        Sprite_Actor.MOTIONS["victory"]["loop"] = false;
+
     var animationDir = String(PluginManager.parameters('SSPlayerForRPGMV')['Animation File Path']
             || "img/animations/ssas")
             + "/";
 
     var _Sprite_Actor_createMainSprite = Sprite_Actor.prototype.createMainSprite;
-    Sprite_Actor.prototype.createMainSprite = function() {
+    Sprite_Actor.prototype.createMainSprite = function () {
         _Sprite_Actor_createMainSprite.call(this);
         this._ssSprite = new SsSprite(null);
         this._mainSprite.addChild(this._ssSprite);
-    }
+    };
 
     var _Sprite_Actor_setBattler = Sprite_Actor.prototype.setBattler;
-    Sprite_Actor.prototype.setBattler = function(battler) {
+    Sprite_Actor.prototype.setBattler = function (battler) {
         var changed = (battler !== this._actor);
         _Sprite_Actor_setBattler.call(this, battler);
         if (changed) {
             this._ssMotions = {};
             this.loadActorSsMotions(motion_suffixes);
         }
-    }
+    };
 
-    Sprite_Actor.prototype.loadActorSsMotions = function(motions) {
-        for ( var motion in motions) {
+    Sprite_Actor.prototype.loadActorSsMotions = function (motions) {
+        for (var motion in motions) {
             this._ssMotions[motion] = null;
             this.loadSsMotion(this._actor.battlerName(), motion);
         }
-    }
+    };
 
-    Sprite_Actor.prototype.loadSsMotion = function(battlerName, motionSuffix) {
+    Sprite_Actor.prototype.loadSsMotion = function (battlerName, motionSuffix) {
         var xhr = new XMLHttpRequest();
         var url = animationDir + battlerName + "_" + motionSuffix + ".json";
         xhr.open('GET', url);
         xhr.overrideMimeType('application/json');
-        xhr.onload = function(motionSuffix) {
+        xhr.onload = function (motionSuffix) {
             if (xhr.status < 400) {
                 var jsonData = JSON.parse(xhr.responseText)[0];
                 var imageList = new SsImageList(jsonData.images, animationDir,
-                        true);
+                    true);
                 var animation = new SsAnimation(jsonData.animation, imageList);
                 this._ssMotions[motionSuffix] = animation;
                 // ロード完了コールバックがあれば実行
@@ -263,24 +281,33 @@
                     this.onSsMotionLoad();
                 }
             }
-        }.bind(this, motionSuffix);
+        } .bind(this, motionSuffix);
         xhr.send();
-    }
-    
+    };
+
     // 元スプライトのビットマップを無効化し、SsSpriteのモーション更新を行う
-    Sprite_Actor.prototype.updateBitmap = function() {
+    Sprite_Actor.prototype.updateBitmap = function () {
         Sprite_Battler.prototype.updateBitmap.call(this);
         this._mainSprite.bitmap = null;
         this.updateSsMotion();
     };
-    
-    Sprite_Actor.prototype.updateSsMotion = function(){
-        if (typeof this._motion === "object"){
+
+    // オプションがONのとき、武器アニメーションを非表示に
+    var _spriteActorSetupWeaponAnimation = Sprite_Actor.prototype.setupWeaponAnimation;
+    Sprite_Actor.prototype.setupWeaponAnimation = function () {
+        if (parameters["HideWeaponGraphics"].toUpperCase() === "OFF") {
+            _spriteActorSetupWeaponAnimation.call(this);
+        }
+    };
+
+    Sprite_Actor.prototype.updateSsMotion = function () {
+        if (typeof this._motion === "object") {
             var motionName = "";
             for (var key in Sprite_Actor.MOTIONS) {
                 if (this._motion === Sprite_Actor.MOTIONS[key])
                     motionName = key;
-            };
+            }
+            ;
             if (motionName === "") motionName = this._motion["index"];
             var newMotion = this._ssMotions[motionName];
             if (this._ssSprite.getAnimation() !== newMotion) {
@@ -289,18 +316,24 @@
                 this._ssSprite.setAnimation(newMotion);
                 this._ssSprite.setLoop(Number(!this._motion["loop"]));
                 if (this._motion["loop"] === false) {
-                    this._ssSprite.setEndCallBack(function() {
+                    this._ssSprite.setEndCallBack(function () {
                         this.refreshMotion();
-                    }.bind(this));
+                    } .bind(this));
                 } else {
-                    this._ssSprite.setEndCallBack(function() {
+                    this._ssSprite.setEndCallBack(function () {
                     });
                 }
                 if (newMotion !== null)
                     this.onSsMotionLoad = null;
             }
         }
-    }
-    
+    };
 
+    var _Sprite_Actor_refreshMotion = Sprite_Actor.prototype.refreshMotion;
+    Sprite_Actor.prototype.refreshMotion = function () {
+        if (BattleManager.isBattleEnd()) {
+            return;
+        }
+        _Sprite_Actor_refreshMotion.call(this);
+    };
 })();
