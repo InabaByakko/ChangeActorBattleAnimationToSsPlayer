@@ -329,6 +329,14 @@
         }
     };
 
+    Sprite_Actor.prototype.updateMotionCount = function () {
+        if (this._motion && this._ssSprite.isPlaying()) {
+            this._motionCount = this._ssSprite.getFrameNo();
+        } else {
+            this.refreshMotion();
+        }
+    };
+
     var _Sprite_Actor_refreshMotion = Sprite_Actor.prototype.refreshMotion;
     Sprite_Actor.prototype.refreshMotion = function () {
         if (BattleManager.isBattleEnd()) {
@@ -336,4 +344,5 @@
         }
         _Sprite_Actor_refreshMotion.call(this);
     };
+
 })();
