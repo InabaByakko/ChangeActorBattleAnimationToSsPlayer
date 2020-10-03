@@ -49,28 +49,10 @@ http://www.webtech.co.jp/help/ja/spritestudio/download/tool_sample_download/#sam
 ### 自作アニメーションを組み込む方法
 
 1. 「SsPlayerForRPGMV」のプラグインパラメータで指定したアニメーションフォルダ
-(既定では"img/animations/ssas")に、以下の法則で付けたファイル名のJSONファイルと、使用している
-画像ファイルを配置します。  
+(既定では"img/animations/ssas")に、アクターに設定した"[SV]戦闘キャラ"画像ファイル名と同名のJSONファイルと、SpriteStudio使用している画像ファイルを配置します。  
 
-    - アクターに設定した"[SV]戦闘キャラ"画像ファイル名が「`Actor1_1.png`」だった場合  
-        * `Actor1_1_walk.json` (前進モーション用データ)
-        * `Actor1_1_wait.json` (通常待機モーション用データ)
-        * `Actor1_1_chant.json` (詠唱待機モーション用データ)
-        * `Actor1_1_guard.json` (防御モーション用データ)
-        * `Actor1_1_damage.json` (ダメージモーション用データ)
-        * `Actor1_1_evade.json` (回避モーション用データ)
-        * `Actor1_1_thrust.json` (突き攻撃モーション用データ)
-        * `Actor1_1_swing.json` (振り攻撃モーション用データ)
-        * `Actor1_1_missile.json` (飛び道具攻撃モーション用データ)
-        * `Actor1_1_skill.json` (汎用スキル発動モーション用データ)
-        * `Actor1_1_spell.json` (魔法発動モーション用データ)
-        * `Actor1_1_item.json` (アイテム使用モーション用データ)
-        * `Actor1_1_escape.json` (逃走モーション用データ)
-        * `Actor1_1_victory.json` (勝利モーション用データ)
-        * `Actor1_1_dying.json` (瀕死モーション用データ)
-        * `Actor1_1_abnormal.json` (状態異常モーション用データ)
-        * `Actor1_1_sleep.json` (睡眠モーション用データ)
-        * `Actor1_1_dead.json` (戦闘不能モーション用データ)
+    - が「`Actor1_1.png`」だった場合  
+        * `Actor1_1.json`
     - これらのモーションファイル名(戦闘キャラ画像ファイル名と".json"の間)は、プラグインパラメータで変更可能です。  
     
 2. 「データベース」の「システム」タブで「サイドビュー戦闘を使用」にチェックを入れます。   

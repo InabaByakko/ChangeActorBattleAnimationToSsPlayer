@@ -97,7 +97,10 @@
  * https://github.com/InabaByakko/SSPlayerForRPGMV
  * 
  * Plug-in commands:
- *   (none)
+ * 
+ * SSPlayAcrorMotion [Party member ID (start with 1)] [motion name]
+ *   # Play any motion of a party member.
+ *   # It searches for motion name by exact match.
  */
 
 /*:ja
@@ -196,7 +199,10 @@
  * https://github.com/InabaByakko/SSPlayerForRPGMV
  * 
  * プラグインコマンド:
- *   （なし）
+ *
+ * SSアクターアニメ再生 [パーティメンバーID (先頭から1)] [モーション名]
+ *   # 指定したパーティメンバーの任意のモーションを再生します。
+ *   # モーション名は完全一致です。
  */
 
 (function () {
@@ -206,6 +212,7 @@
         throw new Error(
                 "Dependency plug-in 'SsPlayerForRPGMV' is not installed.");
     }
+    // TODO: version check isReady
 
     // 接尾語収集
     var parameters = PluginManager
@@ -236,14 +243,25 @@
     if (parameters["Loop(victory)"].toUpperCase() == "OFF")
         Sprite_Actor.MOTIONS["victory"]["loop"] = false;
 
-    var animationDir = String(PluginManager.parameters('SSPlayerForRPGMV')['Animation File Path']
-            || "img/animations/ssas")
-            + "/";
+    var animationDir = SSP4MV.animationDir;
+
+    // プラグインコマンドの定義
+    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function (command, args) {
+        _Game_Interpreter_pluginCommand.call(this, command, args);
+
+        command = command.toUpperCase();
+        if (command === "SSアクターアニメ再生" || command === "SSPlayAcrorMotion") {
+            var member = $gameParty.members()[Number(args[0]||1)-1];
+            if (member) member.forceMotion(args[1]);
+        }
+    };
 
     var _Sprite_Actor_createMainSprite = Sprite_Actor.prototype.createMainSprite;
     Sprite_Actor.prototype.createMainSprite = function () {
         _Sprite_Actor_createMainSprite.call(this);
         this._ssSprite = new SsSprite(null);
+        this._forcedSsMotion = '';
         this._mainSprite.addChild(this._ssSprite);
     };
 
@@ -253,42 +271,90 @@
         _Sprite_Actor_setBattler.call(this, battler);
         if (changed) {
             this._ssMotions = {};
-            this.loadActorSsMotions(motion_suffixes);
+            this.loadSsMotionSet(this._actor.battlerName());
         }
     };
 
     Sprite_Actor.prototype.loadActorSsMotions = function (motions) {
         for (var motion in motions) {
-            this._ssMotions[motion] = null;
-            this.loadSsMotion(this._actor.battlerName(), motion);
+            if (motions.hasOwnProperty(motion)) {
+                var suffix = motions[motion];
+                this._ssMotions[motion] = null;
+                this.loadSsMotion(this._actor.battlerName(), motion, suffix);
+            }
         }
     };
 
-    Sprite_Actor.prototype.loadSsMotion = function (battlerName, motionSuffix) {
+    Sprite_Actor.prototype.loadSsMotion = function (battlerName, motionKey, motionSuffix) {
         var xhr = new XMLHttpRequest();
         var url = animationDir + battlerName + "_" + motionSuffix + ".json";
         xhr.open('GET', url);
         xhr.overrideMimeType('application/json');
-        xhr.onload = function (motionSuffix) {
+        xhr.onload = function (key) {
             if (xhr.status < 400) {
                 var jsonData = JSON.parse(xhr.responseText)[0];
-                var imageList = new SsImageList(jsonData.images, animationDir,
-                    true);
-                var animation = new SsAnimation(jsonData.animation, imageList);
-                this._ssMotions[motionSuffix] = animation;
+                this.setActorSsMotion(jsonData, key);
                 // ロード完了コールバックがあれば実行
                 if (typeof this.onSsMotionLoad === "function") {
                     this.onSsMotionLoad();
                 }
             }
-        } .bind(this, motionSuffix);
+        } .bind(this, motionKey);
         xhr.send();
+    };
+
+    Sprite_Actor.prototype.loadSsMotionSet = function (battlerName) {
+        var xhr = new XMLHttpRequest();
+        var url = animationDir + battlerName + ".json";
+        xhr.open('GET', url);
+        xhr.overrideMimeType('application/json');
+        xhr.onload = function () {
+            if (xhr.status < 400) {
+                var jsonData = JSON.parse(xhr.responseText);
+                this.setActorSsMotionSet(jsonData, battlerName);
+            } else {
+                this.loadActorSsMotions(motion_suffixes);
+            }
+        } .bind(this);
+        xhr.send();
+    };
+
+    Sprite_Actor.prototype.setActorSsMotionSet = function (jsonData, fileName) {
+        Object.keys(motion_suffixes).forEach(function(motion) {
+            this._ssMotions[motion] = null;
+        }.bind(this));
+        jsonData.forEach(function(animData){
+            var name = animData.name.replace(new RegExp('^'+fileName+'_'), '');
+            if (!Object.keys(motion_suffixes).some(function(motion){
+                if (name === motion_suffixes[motion]){
+                    this.setActorSsMotion(animData, motion);
+                    return true;
+                }
+            }.bind(this))){
+                this.setActorSsMotion(animData, name);
+            }
+        }.bind(this));
+    };
+
+    Sprite_Actor.prototype.setActorSsMotion = function (jsonData, motionKey) {
+        var imageList = new SsImageList(jsonData.images, animationDir,
+                    true);
+        var animation = new SsAnimation(jsonData.animation, imageList);
+        this._ssMotions[motionKey] = animation;
     };
 
     // 元スプライトのビットマップを無効化し、SsSpriteのモーション更新を行う
     Sprite_Actor.prototype.updateBitmap = function () {
         Sprite_Battler.prototype.updateBitmap.call(this);
-        this._mainSprite.bitmap = null;
+        if (!this._mainSprite._isReplaced) {            
+            var width = this._ssSprite.getWidth();
+            var height = this._ssSprite.getHeight();
+            if (width !== 0 && height !== 0) {
+                this._mainSprite.bitmap = new Bitmap(width * 9, height * 6);
+                this._mainSprite._needsTint = function() { return false; };
+                this._mainSprite._isReplaced = true;
+            }
+        }            
         this.updateSsMotion();
     };
 
@@ -308,7 +374,13 @@
                     motionName = key;
             }
             ;
-            if (motionName === "") motionName = this._motion["index"];
+            if (motionName === ""){
+                if (this._forcedSsMotion) {
+                    motionName = this._forcedSsMotion;
+                } else {
+                    motionName = this._motion["index"];
+                }
+            }
             var newMotion = this._ssMotions[motionName];
             if (this._ssSprite.getAnimation() !== newMotion) {
                 if (typeof this._ssMotions === "undefined")
@@ -339,10 +411,58 @@
 
     var _Sprite_Actor_refreshMotion = Sprite_Actor.prototype.refreshMotion;
     Sprite_Actor.prototype.refreshMotion = function () {
+        this._forcedSsMotion = '';
         if (BattleManager.isBattleEnd()) {
             return;
         }
         _Sprite_Actor_refreshMotion.call(this);
+    };
+
+    // 次に再生するモーションを予約
+    // YEP_BattleEngineCoreに同名のメソッドがあればそれを使う
+    var _Game_Battler_forceMotion = Game_Battler.prototype.forceMotion;
+    Game_Battler.prototype.forceMotion = function(motionType) {
+        if (_Game_Battler_forceMotion !== undefined) {
+            return _Game_Battler_forceMotion.call(this,motionType);
+        }
+        this._motionType = motionType;
+        if (this.battler()) {
+          this.battler().forceMotion(motionType);
+        }
+    };
+    var _Sprite_Actor_forceMotion = Sprite_Actor.prototype.forceMotion;
+    Sprite_Actor.prototype.forceMotion = function(motionType) {
+        if (_Sprite_Actor_forceMotion !== undefined && !this._mainSprite._isReplaced) {
+            return _Sprite_Actor_forceMotion.call(this);
+        }
+        if (Object.keys(Sprite_Actor.MOTIONS).some(function(motion){return motion === motionType;})){
+            if (_Sprite_Actor_forceMotion !== undefined) {
+                return _Sprite_Actor_forceMotion.call(this, motionType);
+            } else {
+                var newMotion = Sprite_Actor.MOTIONS[motionType];
+                this._motion = newMotion;
+                this._motionCount = 0;
+                this._pattern = 0;
+            }   
+        }
+        if (Object.keys(this._ssMotions).some(function(motion){return motion === motionType;})){
+            this._motion = {index:0, loop:false};
+            this._forcedSsMotion = motionType;
+            this._motionCount = 0;
+            this._pattern = 0;
+        }
+    };
+
+    var _Sprite_Actor_updateMove = Sprite_Actor.prototype.updateMove;
+    Sprite_Actor.prototype.updateMove = function() {
+        if (this._mainSprite._isReplaced){
+            var animation = this._ssSprite.getAnimation();
+            if (animation && animation.isReady()) {
+                _Sprite_Actor_updateMove.call(this);
+            }
+        }else{
+            _Sprite_Actor_updateMove.call(this);
+        }
     };
 
 })();
