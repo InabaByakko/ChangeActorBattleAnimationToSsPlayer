@@ -33,7 +33,7 @@ http://InabaByakko.github.io/ChangeActorBattleAnimationToSsPlayer/SampleProject/
 (既定では"img/animations/ssas")にコピーします。  
 
 1. JSONファイル名の「character\_3head」の部分を、データベースのアクターに設定した"[SV]戦闘キャラ"画像ファイル名に書き換えます。 
-  - 例)アクターに設定した"[SV]戦闘キャラ"画像ファイル名が「`Actor1_1.png`」だった場合、`character_3head_walk.json`を`Actor1_1_walk.json`に書き換えます。 
+    - 例)アクターに設定した"[SV]戦闘キャラ"画像ファイル名が「`Actor1_1.png`」だった場合、`character_3head_walk.json`を`Actor1_1_walk.json`に書き換えます。 
   
 1. 各JSONファイル中の「character\_3head.png」を、1.で書き出したファイル名に変更します。  
 
@@ -78,17 +78,15 @@ http://www.webtech.co.jp/help/ja/spritestudio/download/tool_sample_download/#sam
     * dead (戦闘不能モーション用データ)
 
 1. Ss5ConverterToSSAJSON ツールを使用して、プロジェクトデータの変換を行います。  
-「1モーションを1ファイルに出力する」オプションを使用すると、使用するモーションを1ファイルにまとめられ、さらにバトルイベントにて戦闘用以外のモーションも再生できるようになるため、便利です。
-
-
+「1モーションを1ファイルに出力する」オプションを使用しないことをおすすめします。使用するモーションを1ファイルにまとめられ、さらにバトルイベントにて戦闘用以外のモーションも再生できるようになるため、便利です。
     ![image](https://user-images.githubusercontent.com/3094590/94986257-35c1e700-0598-11eb-8cf5-82aee436630d.png)
 
 
 1. 「SsPlayerForRPGMV」のプラグインパラメータで指定したアニメーションフォルダ
 (既定では"img/animations/ssas")に、上の手順で変換したJSONファイルと、SpriteStudioプロジェクトのセルマップに使用している画像ファイルを配置します。  
-    * 1モーションを1ファイルで出力した場合
+    * 1モーションを1ファイルで出力**しない**場合
         * ![image](https://user-images.githubusercontent.com/3094590/94986298-8afdf880-0598-11eb-80ad-ac9ac4167e65.png)
-    * 1モーションを1ファイルで出力しない場合
+    * 1モーションを1ファイルで出力**した**場合
         * ![image](https://user-images.githubusercontent.com/3094590/94986284-6e61c080-0598-11eb-9fe9-e3131bc35a13.png)
 
 
