@@ -1,8 +1,6 @@
 # ChangeActorBattleAnimationToSsPlayer
 サイドビュー戦闘時のアクター側アニメーションをSpriteStudioアニメーションに差し替えるプラグインです。  
 
-※ 暫定ドキュメントです。  
-
 \*\* [English document is HERE.](README_EN.md) \*\*
 
 ### 注意
@@ -15,11 +13,11 @@ https://github.com/InabaByakko/SSPlayerForRPGMV
 # デモ
 こちらのURLで、このプラグインを使用したデモプロジェクトを公開しています。  
 
-http://www.whiterabbit-hutch.net/CABA2SS_Sample/
+http://InabaByakko.github.io/ChangeActorBattleAnimationToSsPlayer/SampleProject/index.html
 
 # 使い方
 
-### プロジェクトへの組込み
+## プロジェクトへの組込み
 
 1. 右部の「Download ZIP」をクリックし、最新版のZIPアーカイブをダウンロードします。   
   
@@ -27,7 +25,7 @@ http://www.whiterabbit-hutch.net/CABA2SS_Sample/
    
 1. ツクールエディタの「プラグイン管理」より「ChangeActorBattleAnimationToSsPlayer」を追加します。  
 
-### 用意されたモーションを使用する
+## 用意されたモーションを使用する
 
 1. 「sample\_animations」フォルダ中の「character\_3head.psd」ファイルを参考に、あなたのキャラクターを描き、任意のPNGファイル名で保存します。  
 
@@ -46,15 +44,58 @@ http://www.whiterabbit-hutch.net/CABA2SS_Sample/
 なお、本サンプルモーションは、一部SpriteStudio公式のキャラクターアニメーションテンプレートから引用させていただいており、別途足りないモーションを補完して添付しています。  
 http://www.webtech.co.jp/help/ja/spritestudio/download/tool_sample_download/#sample
 
-### 自作アニメーションを組み込む方法
+## SpriteStudio Starter/Professional (バージョン6) で自作アニメーションを作成する場合
+
+このプラグインは、SpriteStudio **バージョン5** のプロジェクトデータにのみ対応しており、SpriteStudio Starter (バージョン6) で作成されたデータのうち、新機能であるメッシュ・ボーン・デフォームの機能を使用したアニメーションは再生できません。
+
+また、JSONファイル変換ツール Ss5ConverterToSSAJSON を使用する前に、プロジェクトをバージョン「5.8」形式でエクスポートしてから、変換を実行して下さい。
+
+![image](https://user-images.githubusercontent.com/3094590/94986114-ec24cc80-0596-11eb-8373-ccf73cf041b3.png)
+![image](https://user-images.githubusercontent.com/3094590/94986118-f050ea00-0596-11eb-979b-b3c9e76fc376.png)
+
+
+## 自作アニメーションを組み込む方法
+
+1. アニメーションデータを作成します。  
+このとき、プロジェクトファイル(sspj)と同じ名前のssaeファイルの中に、以下の名前を持つモーションを作成してください。（このモーション名は、プラグインパラメータで変更できます）
+    * walk (前進モーション用データ)
+    * wait (通常待機モーション用データ)
+    * chant (詠唱待機モーション用データ)
+    * guard (防御モーション用データ)
+    * damage (ダメージモーション用データ)
+    * evade (回避モーション用データ)
+    * thrust (突き攻撃モーション用データ)
+    * swing (振り攻撃モーション用データ)
+    * missile (飛び道具攻撃モーション用データ)
+    * skill (汎用スキル発動モーション用データ)
+    * spell (魔法発動モーション用データ)
+    * item (アイテム使用モーション用データ)
+    * escape (逃走モーション用データ)
+    * victory (勝利モーション用データ)
+    * dying (瀕死モーション用データ)
+    * abnormal (状態異常モーション用データ)
+    * sleep (睡眠モーション用データ)
+    * dead (戦闘不能モーション用データ)
+
+1. Ss5ConverterToSSAJSON ツールを使用して、プロジェクトデータの変換を行います。  
+「1モーションを1ファイルに出力する」オプションを使用すると、使用するモーションを1ファイルにまとめられ、さらにバトルイベントにて戦闘用以外のモーションも再生できるようになるため、便利です。
+
+
+    ![image](https://user-images.githubusercontent.com/3094590/94986257-35c1e700-0598-11eb-8cf5-82aee436630d.png)
+
 
 1. 「SsPlayerForRPGMV」のプラグインパラメータで指定したアニメーションフォルダ
-(既定では"img/animations/ssas")に、アクターに設定した"[SV]戦闘キャラ"画像ファイル名と同名のJSONファイルと、SpriteStudio使用している画像ファイルを配置します。  
+(既定では"img/animations/ssas")に、上の手順で変換したJSONファイルと、SpriteStudioプロジェクトのセルマップに使用している画像ファイルを配置します。  
+    * 1モーションを1ファイルで出力した場合
+        * ![image](https://user-images.githubusercontent.com/3094590/94986298-8afdf880-0598-11eb-80ad-ac9ac4167e65.png)
+    * 1モーションを1ファイルで出力しない場合
+        * ![image](https://user-images.githubusercontent.com/3094590/94986284-6e61c080-0598-11eb-9fe9-e3131bc35a13.png)
 
-    - が「`Actor1_1.png`」だった場合  
-        * `Actor1_1.json`
-    - これらのモーションファイル名(戦闘キャラ画像ファイル名と".json"の間)は、プラグインパラメータで変更可能です。  
-    
+
+1. サイドビュー用アクターグラフィックフォルダ「sv_actors」に、上の手順で配置したJSONファイル名の .json を .png に変えたダミー画像を作成します。
+
+1. 「データベース」の「アクター」で、"[SV]戦闘キャラ" を、上の手順で配置したダミー画像に設定します。
+
 2. 「データベース」の「システム」タブで「サイドビュー戦闘を使用」にチェックを入れます。   
 
 3. お楽しみください。  
