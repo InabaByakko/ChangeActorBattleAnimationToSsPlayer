@@ -316,6 +316,9 @@
                 this.loadActorSsMotions(motion_suffixes);
             }
         } .bind(this);
+        xhr.onerror = function () {
+            this.loadActorSsMotions(motion_suffixes);
+        }.bind(this);
         xhr.send();
     };
 
