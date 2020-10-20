@@ -210,13 +210,13 @@
     // 依存プラグイン導入チェック
     if (typeof SsSprite !== "function") {
         throw new Error(
-                "Dependency plug-in 'SsPlayerForRPGMV' is not installed.");
+            "Dependency plug-in 'SsPlayerForRPGMV' is not installed.");
     }
     // TODO: version check isReady
 
     // 接尾語収集
     var parameters = PluginManager
-            .parameters('ChangeActorBattleAnimationToSsPlayer');
+        .parameters('ChangeActorBattleAnimationToSsPlayer');
     var motion_suffixes = {
         walk: parameters["Suffix(walk)"],
         wait: parameters["Suffix(wait)"],
@@ -252,7 +252,7 @@
 
         command = command.toUpperCase();
         if (command === "SSアクターアニメ再生" || command === "SSPlayAcrorMotion") {
-            var member = $gameParty.members()[Number(args[0]||1)-1];
+            var member = $gameParty.members()[Number(args[0] || 1) - 1];
             if (member) member.forceMotion(args[1]);
         }
     };
@@ -299,7 +299,7 @@
                     this.onSsMotionLoad();
                 }
             }
-        } .bind(this, motionKey);
+        }.bind(this, motionKey);
         xhr.send();
     };
 
@@ -315,7 +315,7 @@
             } else {
                 this.loadActorSsMotions(motion_suffixes);
             }
-        } .bind(this);
+        }.bind(this);
         xhr.onerror = function () {
             this.loadActorSsMotions(motion_suffixes);
         }.bind(this);
@@ -323,17 +323,17 @@
     };
 
     Sprite_Actor.prototype.setActorSsMotionSet = function (jsonData, fileName) {
-        Object.keys(motion_suffixes).forEach(function(motion) {
+        Object.keys(motion_suffixes).forEach(function (motion) {
             this._ssMotions[motion] = null;
         }.bind(this));
-        jsonData.forEach(function(animData){
-            var name = animData.name.replace(new RegExp('^'+fileName+'_'), '');
-            if (!Object.keys(motion_suffixes).some(function(motion){
-                if (name === motion_suffixes[motion]){
+        jsonData.forEach(function (animData) {
+            var name = animData.name.replace(new RegExp('^' + fileName + '_'), '');
+            if (!Object.keys(motion_suffixes).some(function (motion) {
+                if (name === motion_suffixes[motion]) {
                     this.setActorSsMotion(animData, motion);
                     return true;
                 }
-            }.bind(this))){
+            }.bind(this))) {
                 this.setActorSsMotion(animData, name);
             }
         }.bind(this));
@@ -341,23 +341,32 @@
 
     Sprite_Actor.prototype.setActorSsMotion = function (jsonData, motionKey) {
         var imageList = new SsImageList(jsonData.images, animationDir,
-                    true);
+            true);
         var animation = new SsAnimation(jsonData.animation, imageList);
         this._ssMotions[motionKey] = animation;
     };
 
+    Sprite_Actor.prototype.isAnyMotionLoaded = function () {
+        return Object.keys(motion_suffixes).some(function (motionKey) {
+            return this._ssMotions[motionKey];
+        }, this);
+    };
+
     // 元スプライトのビットマップを無効化し、SsSpriteのモーション更新を行う
+    var _Sprite_Actor_updateBitmap = Sprite_Actor.prototype.updateBitmap;
     Sprite_Actor.prototype.updateBitmap = function () {
-        Sprite_Battler.prototype.updateBitmap.call(this);
-        if (!this._mainSprite._isReplaced) {            
+        if (!this.isAnyMotionLoaded()) {
+            return _Sprite_Actor_updateBitmap.apply(this, arguments);
+        }
+        if (!this._mainSprite._isReplaced) {
             var width = this._ssSprite.getWidth();
             var height = this._ssSprite.getHeight();
             if (width !== 0 && height !== 0) {
                 this._mainSprite.bitmap = new Bitmap(width * 9, height * 6);
-                this._mainSprite._needsTint = function() { return false; };
+                this._mainSprite._needsTint = function () { return false; };
                 this._mainSprite._isReplaced = true;
             }
-        }            
+        }
         this.updateSsMotion();
     };
 
@@ -377,7 +386,7 @@
                     motionName = key;
             }
             ;
-            if (motionName === ""){
+            if (motionName === "") {
                 if (this._forcedSsMotion) {
                     motionName = this._forcedSsMotion;
                 } else {
@@ -393,7 +402,7 @@
                 if (this._motion["loop"] === false) {
                     this._ssSprite.setEndCallBack(function () {
                         this.refreshMotion();
-                    } .bind(this));
+                    }.bind(this));
                 } else {
                     this._ssSprite.setEndCallBack(function () {
                     });
@@ -404,7 +413,11 @@
         }
     };
 
+    var _Sprite_Actor_updateMotionCount = Sprite_Actor.prototype.updateMotionCount;
     Sprite_Actor.prototype.updateMotionCount = function () {
+        if (!this._mainSprite._isReplaced) {
+            return _Sprite_Actor_updateMotionCount.apply(this, arguments);
+        }
         if (this._motion && this._ssSprite.isPlaying()) {
             this._motionCount = this._ssSprite.getFrameNo();
         } else {
@@ -424,21 +437,21 @@
     // 次に再生するモーションを予約
     // YEP_BattleEngineCoreに同名のメソッドがあればそれを使う
     var _Game_Battler_forceMotion = Game_Battler.prototype.forceMotion;
-    Game_Battler.prototype.forceMotion = function(motionType) {
+    Game_Battler.prototype.forceMotion = function (motionType) {
         if (_Game_Battler_forceMotion !== undefined) {
-            return _Game_Battler_forceMotion.call(this,motionType);
+            return _Game_Battler_forceMotion.call(this, motionType);
         }
         this._motionType = motionType;
         if (this.battler()) {
-          this.battler().forceMotion(motionType);
+            this.battler().forceMotion(motionType);
         }
     };
     var _Sprite_Actor_forceMotion = Sprite_Actor.prototype.forceMotion;
-    Sprite_Actor.prototype.forceMotion = function(motionType) {
+    Sprite_Actor.prototype.forceMotion = function (motionType) {
         if (_Sprite_Actor_forceMotion !== undefined && !this._mainSprite._isReplaced) {
-            return _Sprite_Actor_forceMotion.call(this);
+            return _Sprite_Actor_forceMotion.call(this, motionType);
         }
-        if (Object.keys(Sprite_Actor.MOTIONS).some(function(motion){return motion === motionType;})){
+        if (Object.keys(Sprite_Actor.MOTIONS).some(function (motion) { return motion === motionType; })) {
             if (_Sprite_Actor_forceMotion !== undefined) {
                 return _Sprite_Actor_forceMotion.call(this, motionType);
             } else {
@@ -446,10 +459,10 @@
                 this._motion = newMotion;
                 this._motionCount = 0;
                 this._pattern = 0;
-            }   
+            }
         }
-        if (Object.keys(this._ssMotions).some(function(motion){return motion === motionType;})){
-            this._motion = {index:0, loop:false};
+        if (Object.keys(this._ssMotions).some(function (motion) { return motion === motionType; })) {
+            this._motion = { index: 0, loop: false };
             this._forcedSsMotion = motionType;
             this._motionCount = 0;
             this._pattern = 0;
@@ -457,13 +470,13 @@
     };
 
     var _Sprite_Actor_updateMove = Sprite_Actor.prototype.updateMove;
-    Sprite_Actor.prototype.updateMove = function() {
-        if (this._mainSprite._isReplaced){
+    Sprite_Actor.prototype.updateMove = function () {
+        if (this._mainSprite._isReplaced) {
             var animation = this._ssSprite.getAnimation();
             if (animation && animation.isReady()) {
                 _Sprite_Actor_updateMove.call(this);
             }
-        }else{
+        } else {
             _Sprite_Actor_updateMove.call(this);
         }
     };
