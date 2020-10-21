@@ -275,12 +275,12 @@
         }
     };
 
-    Sprite_Actor.prototype.loadActorSsMotions = function (motions) {
+    Sprite_Actor.prototype.loadActorSsMotions = function (battlerName, motions) {
         for (var motion in motions) {
             if (motions.hasOwnProperty(motion)) {
                 var suffix = motions[motion];
                 this._ssMotions[motion] = null;
-                this.loadSsMotion(this._actor.battlerName(), motion, suffix);
+                this.loadSsMotion(battlerName, motion, suffix);
             }
         }
     };
@@ -313,11 +313,11 @@
                 var jsonData = JSON.parse(xhr.responseText);
                 this.setActorSsMotionSet(jsonData, battlerName);
             } else {
-                this.loadActorSsMotions(motion_suffixes);
+                this.loadActorSsMotions(battlerName, motion_suffixes);
             }
         }.bind(this);
         xhr.onerror = function () {
-            this.loadActorSsMotions(motion_suffixes);
+            this.loadActorSsMotions(battlerName, motion_suffixes);
         }.bind(this);
         xhr.send();
     };
